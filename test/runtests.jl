@@ -1,5 +1,7 @@
 using WebVisualize
-using Base.Test
+using Blink
 
-# write your own tests here
-@test 1 == 2
+win = Window()
+
+body!(win, WebVisualize.circles())
+# tools(win)
