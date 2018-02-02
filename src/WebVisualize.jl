@@ -1,3 +1,4 @@
+__precompile__()
 module WebVisualize
 
 using WebIO
@@ -23,25 +24,25 @@ function vertexshader(
     position, uv, vScale
 end
 
-using Transpiler, Colors, GLAbstraction
-
-using GLAbstraction
-
-using Base.Test
-import Transpiler: gli, GLMethod, CLMethod
-using Sugar: getsource!, dependencies!
-testkernel = GLMethod((RGB{Float32}, (HSL{Float32},)))
-Sugar.isintrinsic(testkernel)
-Sugar.getsource!(testkernel)
-function fragmentshader(
-        image, uv, scale,
-    )
-    diffuse = image[vUv];
-    opaque = color(diffuse)
-    a = alpha(diffuse)
-    (a < 0.5 ) && discard
-    Vec4f0(color(diffuseColor) * RGB(HSL(scale/5f0, 1f0, 0f0)), a)
-end
+# using Transpiler, Colors, GLAbstraction
+#
+# using GLAbstraction
+#
+# using Base.Test
+# import Transpiler: gli, GLMethod, CLMethod
+# using Sugar: getsource!, dependencies!
+# testkernel = GLMethod((RGB{Float32}, (HSL{Float32},)))
+# Sugar.isintrinsic(testkernel)
+# Sugar.getsource!(testkernel)
+# function fragmentshader(
+#         image, uv, scale,
+#     )
+#     diffuse = image[vUv];
+#     opaque = color(diffuse)
+#     a = alpha(diffuse)
+#     (a < 0.5 ) && discard
+#     Vec4f0(color(diffuseColor) * RGB(HSL(scale/5f0, 1f0, 0f0)), a)
+# end
 
 function circles()
 
