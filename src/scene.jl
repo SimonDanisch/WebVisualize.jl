@@ -14,28 +14,27 @@ function ThreeScreen()
         @var container = this.dom.querySelector("#container");
         @var scene; @var renderer;
         @var geometry; @var material; @var mesh;
-        @var globalscope = this;
+        @var scope = this
 
         function onWindowResize(event)
-            globalscope.camera.aspect = window.innerWidth / window.innerHeight
-            globalscope.camera.updateProjectionMatrix()
+            scope.camera.aspect = window.innerWidth / window.innerHeight
+            scope.camera.updateProjectionMatrix()
         end
         function animate()
             requestAnimationFrame(animate)
             render()
         end
         function render()
-            renderer.render(scene, globalscope.camera)
+            renderer.render(scene, scope.camera)
         end
 
         function init()
             renderer = @new THREE.WebGLRenderer()
-            window.globalscope = globalscope
-            window.THREE = THREE
-            globalscope.camera = @new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 5000);
-            globalscope.camera.position.z = 1400;
+            scope.THREE = THREE
+            scope.camera = @new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 5000);
+            scope.camera.position.z = 1400;
             scene = @new THREE.Scene()
-            window.scene = scene
+            scope.scene = scene
             renderer.setPixelRatio(window.devicePixelRatio)
             renderer.setSize(window.innerWidth, window.innerHeight)
             container.appendChild(renderer.domElement)
@@ -50,13 +49,14 @@ screen = ThreeScreen()
 mesh_add = Observable(screen.context, "mesh_add", true)
 
 onjs(mesh_add, @js function (val)
-    @var THREE = window.THREE
+    @var THREE = this.THREE
     @var geometry = @new THREE.CubeGeometry(200, 200, 200)
 
     @var material = @new THREE.MeshBasicMaterial(d(color = "#00ff00"))
     @var mesh = @new THREE.Mesh(geometry, material)
-    window.scene.add(mesh)
+    this.scene.add(mesh)
 end)
+
 using Blink
 w = Window()
 body!(w, screen.context(dom"div#container"()))
@@ -72,16 +72,15 @@ pos = to_obs(screen, scene.camera_controls[].eyeposition, "eyeposition")
 
 onjs(pos, @js function (pos)
     console.log(pos)
-    # @var THREE = window.THREE
-    # @var camera = window.globalscope.camera
+    # @var THREE = this.THREE
+    # @var camera = this.camera
     # camera.position.set(100, 100, 1400)
     # camera.updateProjectionMatrix();
 end)
 
 evaljs(screen.context, @js begin
-    @var THREE = window.THREE
-    @var camera = window.globalscope.camera
+    @var THREE = this.THREE
+    @var camera = this.camera
     camera.position.set(100, 100, 1400)
     camera.updateProjectionMatrix();
 end)
-tools(w)
