@@ -5,7 +5,7 @@ uniform mat4 projectionMatrix;
 attribute vec3 position;
 attribute vec2 uv;
 attribute vec3 translate;
-attribute vec3 scale;
+//attribute vec3 scale;
 
 varying vec2 vUv;
 

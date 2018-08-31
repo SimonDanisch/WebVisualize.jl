@@ -2,6 +2,8 @@ using WebIO, JSExpr, Observables
 using Blink, Colors
 
 
+assetpath(files...) = joinpath(@__DIR__, "..", "assets", files...)
+
 function circles(image, w, h)
 
     threejs = Scope(imports = [
@@ -15,38 +17,9 @@ function circles(image, w, h)
     camerapos = Observable(threejs, "camerapos", 1400.0)
     onjs(camerapos, @js (pos) -> (this.camera.position.z = pos))
 
-    vert_shader = Observable(threejs, "vert_shader", """
-    precision highp float;
-    uniform mat4 modelViewMatrix;
-    uniform mat4 projectionMatrix;
-    uniform float time;
-    attribute vec3 position;
-    attribute vec2 uv;
-    attribute vec3 translate;
-    varying vec2 vUv;
-    varying float vScale;
-    void main() {
-        vec4 mvPosition = modelViewMatrix * vec4( translate, 1.0 );
-        vec3 trTime = vec3(translate.x + time,translate.y + time,translate.z + time);
-        float scale =  sin( trTime.x * 2.1 ) + sin( trTime.y * 3.2 ) + sin( trTime.z * 4.3 );
-        vScale = scale;
-        scale = scale * 10.0 + 10.0;
-        mvPosition.xyz += position * scale;
-        vUv = uv;
-        gl_Position = projectionMatrix * mvPosition;
-    }
-    """)
+    vert_shader = Observable(threejs, "vert_shader", read(assetpath("particle.vert"), String))
 
-    frag_shader = Observable(threejs, "frag_shader", """
-    precision highp float;
-    uniform sampler2D my_tex;
-    varying vec2 vUv;
-    varying float vScale;
-    void main() {
-        vec4 diffuseColor = texture2D( my_tex, vUv );
-        gl_FragColor = diffuseColor;
-    }
-    """)
+    frag_shader = Observable(threejs, "frag_shader", read(assetpath("particle.frag"), String))
 
     onimport(threejs, @js function (THREE, OrbitControlsModule)
 
@@ -118,12 +91,15 @@ function circles(image, w, h)
 end
 using Blink, FixedPointNumbers
 using FileIO
-doge = load(raw"C:\Users\sdani\.julia\dev\Makie\src\glbackend\GLVisualize\assets\doge.png")
+ |> isfile
+joinpath(homedir(), raw".julia/dev/Makie") |> ispath
+
+
+doge = load(joinpath(homedir(), ".julia/dev/Makie/src/glbackend/GLVisualize/assets/doge.png"))
 
 img2 = UInt8[
     getfield(doge[i, j], c).i
     for c in 1:4, i = 1:size(doge, 1), j = 1:size(doge, 2)
 ] |> vec
 w = Window()
-
 body!(w, circles(img2, size(doge, 1), size(doge, 2)))
