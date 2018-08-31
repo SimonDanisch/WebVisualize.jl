@@ -4,6 +4,53 @@ using Blink, Colors
 
 assetpath(files...) = joinpath(@__DIR__, "..", "assets", files...)
 
+struct Geometry
+    scope::Scope
+end
+
+
+
+evaljs(scope, @js begin
+    this.buffer_geometry = function (in_vertices, indices, in_normals)
+        @var geometry = @new this.THREE.BufferGeometry();
+        geometry.setIndex($(gindices));
+        # itemSize = 3 because there are 3 values (components) per vertex
+        geometry.addAttribute("position", @new this.THREE.BufferAttribute(vertices, 3))
+        geometry.addAttribute("normal", @new this.THREE.BufferAttribute(normals, 3))
+    end
+end)
+
+
+    vertices = reinterpret(Float32, decompose(Point3f0, geom))
+    indices = reinterpret(UInt32, decompose(GLTriangle, geom))
+function InstancedGeometry(geometry, attributes)
+    @var circleGeometry = @new THREE.CircleBufferGeometry(1, 6);
+    geometry = @new THREE.InstancedBufferGeometry();
+    geometry.index = circleGeometry.index;
+    geometry.attributes = circleGeometry.attributes;
+    @var vertices = @new Float32Array($(in_vertices));
+    @var normals = @new Float32Array($(in_normals));
+    @var transbuff = @new Float32Array($translateArray[])
+    instanced_trans = @new THREE.InstancedBufferAttribute(transbuff, 3, 1)
+    geometry.addAttribute("translate", instanced_trans);
+
+    @var scalebuff = @new Float32Array($scales[])
+    instanced_scalebuff = @new THREE.InstancedBufferAttribute(scalebuff, 3, 1)
+    geometry.addAttribute("scale", instanced_scalebuff);
+
+end
+
+function add_attribute!(geometry, name, attribute)
+    evaljs(geometry.scope, @js begin
+        @var buff = @new Float32Array($translateArray[])
+        instanced_buff = @new THREE.InstancedBufferAttribute(buff, 3, 1)
+        geometry.addAttribute($(name), instanced_buff);
+    end)
+    onjs(attribute, @js function (values)
+
+    end)
+end
+
 function circles(image, w, h)
 
     threejs = Scope(imports = [
@@ -14,11 +61,12 @@ function circles(image, w, h)
     particleCount = 75000;
     translateArray = Observable(threejs, "translateArray", rand(particleCount * 3) .* 2.0 .- 1.0)
 
+    scales = Observable(threejs, "scales", rand(particleCount * 3) .* 20.0 .- 1.0)
+
     camerapos = Observable(threejs, "camerapos", 1400.0)
     onjs(camerapos, @js (pos) -> (this.camera.position.z = pos))
 
     vert_shader = Observable(threejs, "vert_shader", read(assetpath("particle.vert"), String))
-
     frag_shader = Observable(threejs, "frag_shader", read(assetpath("particle.frag"), String))
 
     onimport(threejs, @js function (THREE, OrbitControlsModule)
@@ -31,7 +79,6 @@ function circles(image, w, h)
         function onWindowResize(event)
             globalscope.camera.aspect = window.innerWidth / window.innerHeight
             globalscope.camera.updateProjectionMatrix()
-
         end
         function animate()
             requestAnimationFrame(animate)
@@ -59,6 +106,11 @@ function circles(image, w, h)
             @var transbuff = @new Float32Array($translateArray[])
             instanced_trans = @new THREE.InstancedBufferAttribute(transbuff, 3, 1)
             geometry.addAttribute("translate", instanced_trans);
+
+            @var scalebuff = @new Float32Array($scales[])
+            instanced_scalebuff = @new THREE.InstancedBufferAttribute(scalebuff, 3, 1)
+            geometry.addAttribute("scale", instanced_scalebuff);
+
             # material
             @var img = $image_obs[];
             @var dummyRGBA = @new Uint8Array(img);
@@ -91,15 +143,13 @@ function circles(image, w, h)
 end
 using Blink, FixedPointNumbers
 using FileIO
- |> isfile
-joinpath(homedir(), raw".julia/dev/Makie") |> ispath
 
 
 doge = load(joinpath(homedir(), ".julia/dev/Makie/src/glbackend/GLVisualize/assets/doge.png"))
 
-img2 = UInt8[
+img2 = vec(UInt8[
     getfield(doge[i, j], c).i
     for c in 1:4, i = 1:size(doge, 1), j = 1:size(doge, 2)
-] |> vec
+])
 w = Window()
 body!(w, circles(img2, size(doge, 1), size(doge, 2)))
